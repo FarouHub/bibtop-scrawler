@@ -1,7 +1,16 @@
 var cheerio = require('cheerio');
 var request = require('request');
 var jsonframe = require('jsonframe-cheerio');
-var MongoClient = require("mongodb").MongoClient;
+var mongoose = require('mongoose');
+var courseModel = require('./api/models/courseModel');
+var villeModel = require('./api/models/villeModel');
+var villeApi = mongoose.model('ville');
+var courseApi = mongoose.model('course');
+
+// mongoose instance connection url connection
+mongoose.Promise = global.Promise;
+mongoose.connect("mongodb://localhost/todorace");
+
 
 /* Info de navigation */
 var $navInfo = [];
@@ -11,6 +20,17 @@ $navInfo['page']['addRoot'] = true;
 $navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=1&q=&date_begin=&date_end=&country_code=FR';
 //$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier/page-3?fs=1&q=&date_begin=&date_end=&country_code=FR';
 $navInfo['page']['degraded'] = 0;
+$navInfo['proxies'] = [];
+$navInfo['proxies'][0] = 'http://173.234.249.27:3128';
+$navInfo['proxies'][1] = 'http://23.19.32.47:3128';
+$navInfo['proxies'][2] = 'http://23.19.32.150:3128';
+$navInfo['proxies'][3] = 'http://173.234.249.204:3128';
+$navInfo['proxies'][4] = 'http://173.234.232.93:3128'
+$navInfo['proxies'][5] = 'http://173.208.39.197:3128';
+$navInfo['proxies'][6] = 'http://23.19.32.170:3128';
+$navInfo['proxies'][7] = 'http://23.19.32.163:3128';
+$navInfo['proxies'][8] = 'http://173.208.39.172:3128';
+$navInfo['proxies'][9] = 'http://173.234.232.204:3128';
 
 /* Recupere les infos sur la page qui liste les liens vers les détails (notamment l'url) */
 let frameCourses = {
@@ -74,9 +94,10 @@ parser_page($navInfo, $timeinterval);
 	-- appel fonction PARSER_PAGE ($next_page, $path_URL_next_page)
 */
 function parser_page(navInfo, $timeinterval){
-	
+	var x = Math.floor((Math.random() * 9) + 1);
 	let options = {
 	  url: navInfo['page']['currentPage'],
+	  proxy: navInfo['proxies'][x],
 	  headers: {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
 	  }
@@ -153,9 +174,10 @@ function parser_page(navInfo, $timeinterval){
 }
 
 function parser_article(navInfo, callback){
-	
+	var x = Math.floor((Math.random() * 9) + 1);
 	let options = {
 	  url: navInfo['page']['currentPage'],
+	  proxy: navInfo['proxies'][x],
 	  headers: {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
 	  }
@@ -163,49 +185,60 @@ function parser_article(navInfo, callback){
 	
 	request(options, function (error, response, html) {
 		if (!error && response.statusCode == 200) {
-			console.log('[DEBUG] Open article URL: ' + options.url);
+			console.log('[DEBUG] Open article URL: ' + options.url + ' avec le proxy ' + options.proxy);
 			let $ = cheerio.load(html);
 			// initializes the jsonframe-cheerio plugin
 			jsonframe($);
 			
 			let course =  $('body').scrape(frameCourse);
 			course.root[0].urlid = options.url;
+			course.root[0].random = Math.floor((Math.random() * 5) + 1);
 			//console.log(course.root);
 			
 			
 			//mongodb://spartan:pioupiou123@cluster0-shard-00-00-hfhr2.mongodb.net:27017,cluster0-shard-00-01-hfhr2.mongodb.net:27017,cluster0-shard-00-02-hfhr2.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin
 			// BEGIN DB stuff
-			MongoClient.connect("mongodb://localhost/todorace", function(error, db) {
-				if (error) return funcCallback(error);
-				
-				var query = { urlid: options.url };
-				  db.collection("course").find(query).toArray(function(err, result) {
-					if (err) throw err;
-					//console.log(result); 
-					if(result.length == 0){
-						db.collection("course").insert(course.root[0], null, function (error, results) {
-						if (error) throw error;
 
-						console.log("Le document a bien été inséré"); 
-						db.close();	
+			courseApi.find({ urlid: options.url }, function(err, findResult) {
+				console.log('err: ' + err);
+				console.log('findResult: ' + findResult);
+				if (err)
+					console.log("ERR #1");
+				if(findResult.length == 0){
+					
+					/// try to find the town
+					villeApi.find({ FULL_NAME_RO: course.root[0].commune }, function(err, findVilleResult) {
+						if (err)
+								console.log("ERR #1");
+							
+						if(findVilleResult.length == 0){
+							console.log("## Ville non trouvee");
+						}else{
+							console.log('lat: ' + findVilleResult[0].LAT + ' long: ' + findVilleResult[0].LONG);
+							course.root[0].lat =  findVilleResult[0].LAT;
+							course.root[0].long =  findVilleResult[0].LONG;
+							var new_course = new courseModel(course.root[0]);
+							new_course.save(function(err, saveResult) {
+								if (err)
+									console.log("ERR #2");
+					
+								console.log("Le document a bien été inséré");
+							});
+						}
+					});
+					////
 
-						});
-					}else{
-						console.log("Document deja en base"); 
-						db.close();
-					}
-				  });
-				
+				}else{
+					console.log("Le document existe deja");
+				}
 			});
+			
+		
 			// END DB stuff
 			
 			callback();
 		}
 	});
-}
-
-function findTownPossition() {
-	
 }
 
 function waitFor(testFx, onReady, timeOutMillis) {
