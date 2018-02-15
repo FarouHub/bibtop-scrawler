@@ -16,6 +16,14 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# config files
+config.js
+
 # Test files
-fr.txt
-villes.xlsx
+/test
+
+# dev files
+*.bat
+
+# log files
+*.log

@@ -2,13 +2,15 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-
 var CourseSchema = new Schema({
   
   title: {
     type: String
   },
-  date: {
+  start_date: {
+    type: Date
+  },
+  end_date: {
     type: Date
   },
   region: {
@@ -30,29 +32,37 @@ var CourseSchema = new Schema({
     type: String
   },
   random: {
-	type: String  
+	  type: String  
   },
   lat: {
     type: Number  
   },
   long: {
     type: Number  
-  }
-  /*,
-  description: {
+  },
+  depart: {
     type: String
   },
-  img: {
-    type: String,
-    default: 'running1.jpg'
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  distance: {
+  service:{
     type: String
   },
+  recompences: {
+    type: String
+  },
+  animation: {
+    type: String
+  },
+  epreuves: [{
+    name: String,
+    description: String,
+    distance: Number,
+    maxinscription : Number,
+    prices: [{
+      prix: Number,
+      date: Date,
+      type: String
+    }]
+  }]/*
   type: {
     type: [{
       type: String,
