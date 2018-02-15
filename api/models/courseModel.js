@@ -2,6 +2,21 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
+
+var priceSchema = new Schema({
+  prix: Number,
+  date: Date,
+  type: String
+});
+
+var epreuveSchema = new Schema({
+  name: String,
+  description: String,
+  distance: Number,
+  maxinscription : Number,
+  prices: [priceSchema]
+});
+
 var CourseSchema = new Schema({
   
   title: {
@@ -19,6 +34,9 @@ var CourseSchema = new Schema({
   commune: {
     type: String
   },
+  commune_req: {
+    type: String
+  },
   contact: {
     type: String
   },
@@ -26,6 +44,9 @@ var CourseSchema = new Schema({
     type: String
   },
   mail: {
+    type: String
+  },
+  url_club: {
     type: String
   },
   urlid: {
@@ -52,17 +73,8 @@ var CourseSchema = new Schema({
   animation: {
     type: String
   },
-  epreuves: [{
-    name: String,
-    description: String,
-    distance: Number,
-    maxinscription : Number,
-    prices: [{
-      prix: Number,
-      date: Date,
-      type: String
-    }]
-  }]/*
+  epreuves: [epreuveSchema]
+  /*
   type: {
     type: [{
       type: String,

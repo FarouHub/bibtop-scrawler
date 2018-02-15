@@ -28,8 +28,8 @@ var $navInfo = [];
 $navInfo['page'] = {};
 $navInfo['page']['rootPage'] = 'http://www.jogging-international.net';
 $navInfo['page']['addRoot'] = true;
-//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=1&q=&date_begin=&date_end=&country_code=FR';
-$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier/page-12?country_code=FR&date_begin=&date_end=&fs=1&q=';
+$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=1&q=&date_begin=&date_end=&country_code=FR';
+//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier/page-12?country_code=FR&date_begin=&date_end=&fs=1&q=';
 $navInfo['page']['degraded'] = 0;
 $navInfo['proxies'] = config.proxies;
 
@@ -91,8 +91,8 @@ parser_page($navInfo, $timeinterval);
 //$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/7521-trail-des-loups';
 //$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/7944-pyjama-trail-party';
 //$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/7859-trail-du-chemin-des-moines-nocturne';
-
-//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/5383-foulees-de-saint-armel';
+//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/7364-foulees-gengatataises';
+//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/6492-trail-des-villes-royales';
 //parser_article($navInfo, function(){ logger.debug('Callback'); });
 
 /**
@@ -237,13 +237,13 @@ function parser_article(navInfo, callback) {
 					dataDivers = dataDivers.substring(0, indexInscription-1);
 				}
 
-				tmpEpreuve.prices = [];
+				tmpEpreuve['prices'] = [];
 
 				if(indexPrixSurPlace != -1){
 					tmpEpreuve.prixplace = dataDivers.substring(indexPrixSurPlace+29, dataDivers.length);
 					let parserString = parsePrixString(tmpEpreuve.prixplace, true);
-					for(let tmpPrice of parserString){
-						tmpEpreuve.prices.push(tmpPrice);
+					for(let tmpPrice of parserString['prices']){
+						tmpEpreuve['prices'].push(tmpPrice);
 					}
 					dataDivers = dataDivers.substring(0, indexPrixSurPlace-1);
 				}
@@ -251,14 +251,11 @@ function parser_article(navInfo, callback) {
 				if(indexPrix != -1){
 					tmpEpreuve.prix = dataDivers.substring(indexPrix+19, dataDivers.length);
 					let parserString = parsePrixString(tmpEpreuve.prix, false);
-					for(let tmpPrice of parserString){
-						tmpEpreuve.prices.push(tmpPrice);
+					for(let tmpPrice of parserString['prices']){
+						tmpEpreuve['prices'].push(tmpPrice);
 					}
 					dataDivers = dataDivers.substring(0, indexPrix-1);
 				}
-				tmpEpreuve.prices = JSON.stringify(tmpEpreuve.prices);
-
-				//console.log(tmpEpreuve.prices);
 
 				tmpEpreuve.depart = dataDivers.substring(indexDepart+9, dataDivers.length); // +8 ton skip Départ :
 
@@ -274,6 +271,7 @@ function parser_article(navInfo, callback) {
 				} 
 
 				tmpEpreuve.divers = null;
+				//console.log(tmpEpreuve);
 			}
 			
 			courseApi.find({ urlid: options.url }, function(err, findResult) {
@@ -334,7 +332,8 @@ function parsePrixString(date_string, dday){
 
     // licence, licence_day, all, all_day
 
-    let result = [];
+    let result = {};
+    result['prices'] = [];
 
     let reDate = /(\d+\/\d+\/\d+)/g;
 	let rePrice = null;
@@ -351,16 +350,17 @@ function parsePrixString(date_string, dday){
 
     if(date_string.indexOf('tarif') != -1){
         let tmpResult = {};
-        tmpResult.prix = mPrices[0].replace(rePrice, '$1');
-        tmpResult.date = date_string.match(reDate)[0];
-        tmpResult.date =  '20' + tmpResult.date.substring(6,8) + '-' + tmpResult.date.substring(3,5) + '-' + tmpResult.date.substring(0,2);
-        tmpResult.type = 'all';
+        tmpResult['prix'] = Number(mPrices[0].replace(rePrice, '$1'));
+        tmpResult['date'] = date_string.match(reDate)[0];
+        tmpResult['date'] =  '20' + tmpResult.date.substring(6,8) + '-' + tmpResult.date.substring(3,5) + '-' + tmpResult.date.substring(0,2);
+        tmpResult['type'] = 'all';
 
         if(dday){
-            tmpResult.type += '_day';
+            tmpResult['type'] += '_day';
         }
 
-        result.push(tmpResult);
+        result['prices'].push(tmpResult);
+
     }  else if(mPrices != null && mPrices.length > 1){
 
         let tmpResultAll = {};
@@ -370,33 +370,33 @@ function parsePrixString(date_string, dday){
         let prix2 = Number(mPrices[1].replace(rePrice, '$1'));
 
         if(prix1 > prix2){
-            tmpResultAll.prix = prix1; 
-            tmpResultLic.prix = prix2;
+            tmpResultAll['prix'] = prix1; 
+            tmpResultLic['prix'] = prix2;
         }else{
-            tmpResultAll.prix = prix2;
-            tmpResultLic.prix = prix1
+            tmpResultAll['prix'] = prix2;
+            tmpResultLic['prix'] = prix1
         }
 
-        tmpResultAll.type = 'all';
-        tmpResultLic.type = 'licence';
+        tmpResultAll['type'] = 'all';
+        tmpResultLic['type'] = 'licence';
 
         if(dday){
-            tmpResultAll.type += '_day';
-            tmpResultLic.type += '_day';
+            tmpResultAll['type'] += '_day';
+            tmpResultLic['type'] += '_day';
         }
 
-        result.push(tmpResultAll);
-        result.push(tmpResultLic);
+        result['prices'].push(tmpResultAll);
+        result['prices'].push(tmpResultLic);
     }else{
 
         let tmpResult = {};
-        tmpResult.prix = mPrices[0].replace(rePrice, '$1');
+        tmpResult.prix = Number(mPrices[0].replace(rePrice, '$1'));
         tmpResult.type = 'all';
         if(dday){
             tmpResult.type += '_day';
         }
 
-        result.push(tmpResult);
+        result['prices'].push(tmpResult);
 
     }
     return result;

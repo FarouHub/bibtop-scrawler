@@ -18,6 +18,7 @@ Thumbs.db
 
 # config files
 config.js
+correction.js
 
 # Test files
 /test
