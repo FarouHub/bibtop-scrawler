@@ -4,10 +4,11 @@ var request = require('request');
 var jsonframe = require('jsonframe-cheerio');
 var mongoose = require('mongoose');
 var winston = require('winston');
-var courseModel = require('./api/models/courseModel');
+var epreuveModel = require('./api/models/epreuveModel');
 var villeModel = require('./api/models/villeModel');
-var villeApi = mongoose.model('ville');
-var courseApi = mongoose.model('course');
+
+var Ville = mongoose.model('ville');
+var Epreuve = mongoose.model('epreuve');
 
 // init the logger
 var logger = new (winston.Logger)({
@@ -64,7 +65,7 @@ let frameCourse = {
 			"phone": "h2:contains('Contact') + div li:contains('Tél') || : (.*)",
 			"mail": "h2:contains('Contact') + div li:contains('Email') || : (.*)",
 			"url_club": ".bt-jog @ href",
-			"epreuves": {
+			"_epreuves_": {
 			"_s": ".jog-data-tab tr",
 			"_d": [{"name": "span || - (.*)",
 					"distance": "span || ([\\d,\\.]+)",
@@ -219,7 +220,7 @@ function parser_article(navInfo, callback) {
 			// management de la zone divers
 			let cacheType = 'Standard';
 
-			for(let tmpEpreuve of course.root[0].epreuves){
+			for(let tmpEpreuve of course.root[0]._epreuves_){
 				let dataDivers = tmpEpreuve.divers;
 				let indexDepart = dataDivers.indexOf('Départ :');
 				let indexDescription = dataDivers.indexOf('Description :');
@@ -274,14 +275,14 @@ function parser_article(navInfo, callback) {
 				//console.log(tmpEpreuve);
 			}
 			
-			courseApi.find({ urlid: options.url }, function(err, findResult) {
+			Epreuve.find({ urlid: options.url }, function(err, findResult) {
 				if (err){
 					logger.error('Unable to find the race. URL %s', options.url, err);
 					callback();
 				}else{
 					if(findResult.length == 0){
 						/// try to find the town
-						villeApi.find({ SORT_NAME_RO: course.root[0].commune_req, NAME_RANK: '1' }, function(err, findVilleResult) {
+						Ville.find({ SORT_NAME_RO: course.root[0].commune_req, NAME_RANK: '1' }, function(err, findVilleResult) {
 							if (err){
 								logger.error('Unable to find the city. URL %s', options.url, { SORT_NAME_RO: course.root[0].commune_req }, err);
 								callback();
@@ -297,16 +298,26 @@ function parser_article(navInfo, callback) {
 									course.root[0].lat =  findVilleResult[0].LAT;
 									course.root[0].long =  findVilleResult[0].LONG;
 
-									var new_course = new courseModel(course.root[0]);
-									new_course.save(function(err, saveResult) {
-										if (err){
-											logger.error('Unable to save the race. URL %s', options.url, err);
-											callback();
-										}else{
-											logger.info("Le document %s a bien été inséré", options.url);
-											callback();
+									for(let tmpEpreuve of course.root[0]._epreuves_){
+										tmpEpreuve._id = new mongoose.Types.ObjectId();
+										tmpEpreuve.epreuves = [];
+									}
+
+									for(let tmpEpreuve of course.root[0]._epreuves_){
+										for(let tmp of course.root[0]._epreuves_){
+											if(!tmp._id.equals(tmpEpreuve._id)){
+												tmpEpreuve.push(tmp);
+											}
 										}
-									});
+
+										var mEp = new epreuveModel(Object.assign(tmpEpreuve, course.root[0]));
+										mEp.save(function(err){
+											if (err){
+												logger.error('Unable to save the epreuve.', err);
+												callback();
+											}
+										});
+									}	
 								}
 							}
 						});

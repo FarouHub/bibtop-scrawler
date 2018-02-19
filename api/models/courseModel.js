@@ -9,7 +9,7 @@ var priceSchema = new Schema({
   type: String
 });
 
-var epreuveSchema = new Schema({
+var epreuveOldSchema = new Schema({
   name: String,
   description: String,
   distance: Number,
@@ -73,7 +73,7 @@ var CourseSchema = new Schema({
   animation: {
     type: String
   },
-  epreuves: [epreuveSchema]
+  _epreuves_: [epreuveOldSchema]
   /*
   type: {
     type: [{
