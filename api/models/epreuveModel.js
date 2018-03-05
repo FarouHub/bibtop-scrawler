@@ -10,6 +10,7 @@ var PriceSchema = new Schema({
 
 var EpreuveSchema = new Schema({
     name: String,
+    type: String,
     description: String,
     distance: Number,
     maxinscription : Number,
@@ -27,9 +28,10 @@ var EpreuveSchema = new Schema({
     random: String,
     lat: Number,
     long: Number,
-    depart: String,
+    place_depart: String,
+    hour_depart: String,
     service:String,
-    recompences: String,
+    recompense: String,
     animation: String,
     epreuves: [{ type: Schema.Types.ObjectId, ref: 'epreuve' }],
     prices: [PriceSchema]

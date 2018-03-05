@@ -57,7 +57,7 @@ let frameCourse = {
 			"commune": "[itemprop=articleBody] ul + ul li + li || : (.*) | before(()",
 			"commune_req": "[itemprop=articleBody] ul + ul li + li || : (.*) | before(() | no_accent words_no_space uppercase",
 			"codepostal": "[itemprop=articleBody] ul + ul li + li || : (.*) ",
-			"depart": "[itemprop=articleBody] ul + ul li + li + li || : (.*)",
+			"place_depart": "[itemprop=articleBody] ul + ul li + li + li || : (.*)",
 			"service" : "h2:contains('Services') + ul li:contains('Service') || : (.*)",
 			"recompences" : "h2:contains('Services') + ul li:contains('Récompenses') || : (.*)",
 			"animation" : "h2:contains('Services') + ul li:contains('Animation') || : (.*)",
@@ -207,7 +207,7 @@ function parser_article(navInfo, callback) {
 			
 			let course =  $('body').scrape(frameCourse);
 			course.root[0].urlid = options.url;
-			course.root[0].random = Math.floor((Math.random() * 7) + 1);
+			course.root[0].random = Math.floor((Math.random() * 9) + 1);
 		
 			// management des dates
 			let tmpDate = course.root[0].date;
@@ -258,7 +258,7 @@ function parser_article(navInfo, callback) {
 					dataDivers = dataDivers.substring(0, indexPrix-1);
 				}
 
-				tmpEpreuve.depart = dataDivers.substring(indexDepart+9, dataDivers.length); // +8 ton skip Départ :
+				tmpEpreuve.hour_depart = dataDivers.substring(indexDepart+9, dataDivers.length); // +8 ton skip Départ :
 
 				if(typeof tmpEpreuve.type != 'undefined' && tmpEpreuve.type.indexOf('<span>') == -1){
 					cacheType = tmpEpreuve.type;
@@ -270,6 +270,11 @@ function parser_article(navInfo, callback) {
 				if(typeof tmpEpreuve.distance != 'undefined' && tmpEpreuve.distance.indexOf(',') != -1){
 					tmpEpreuve.distance = tmpEpreuve.distance.replace(',', '.');
 				} 
+
+				let regexName = /(\w+)\s*\(\d+\)/g;
+				if(typeof tmpEpreuve.name != 'undefined' && tmpEpreuve.name.match(regexName)){
+					tmpEpreuve.name = tmpEpreuve.name.replace(regexName, '$1');
+				}
 
 				tmpEpreuve.divers = null;
 				//console.log(tmpEpreuve);
@@ -306,7 +311,7 @@ function parser_article(navInfo, callback) {
 									for(let tmpEpreuve of course.root[0]._epreuves_){
 										for(let tmp of course.root[0]._epreuves_){
 											if(!tmp._id.equals(tmpEpreuve._id)){
-												tmpEpreuve.push(tmp);
+												tmpEpreuve.epreuves.push(tmp);
 											}
 										}
 
@@ -314,10 +319,11 @@ function parser_article(navInfo, callback) {
 										mEp.save(function(err){
 											if (err){
 												logger.error('Unable to save the epreuve.', err);
-												callback();
 											}
 										});
-									}	
+									}
+									
+									callback();
 								}
 							}
 						});
