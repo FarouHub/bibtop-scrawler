@@ -21,7 +21,7 @@ let BibScrawler = (function () {
 
     }
 
-    BibScrawler.prototype.load = function(name, frameCourses, frameCourse, frameNextPageUrl){
+    BibScrawler.prototype.load = function(name, frameItems, frameItem, frameNextPageUrl){
 
         this._name = name;
         // init the logger
@@ -32,8 +32,8 @@ let BibScrawler = (function () {
                 new (winston.transports.File)({ name: this._name + '_error', filename: 'logs/' + this._name + '_error.log', level: 'error' }),
             ]
         });
-        this._frameCourses = frameCourses;
-        this._frameCourse  = frameCourse;
+        this._frameItems = frameItems;
+        this._frameItem  = frameItem;
         this._frameNextPageUrl = frameNextPageUrl;
     }
 
@@ -61,7 +61,7 @@ let BibScrawler = (function () {
                 let $ = cheerio.load(html);
                 jsonframe($);
                 
-                let articles = $('body').scrape(context._frameCourses);
+                let articles = $('body').scrape(context._frameItems);
                 let nextPage = $('body').scrape(context._frameNextPageUrl);
                 
                 let index = 0;
@@ -137,9 +137,9 @@ let BibScrawler = (function () {
                 // initializes the jsonframe-cheerio plugin
                 jsonframe($);
                 
-                let course =  $('body').scrape(context._frameCourse);
-                course.root[0].urlid = options.url;
-                itemHandler(course.root[0], callback);
+                let item =  $('body').scrape(context._frameItem);
+                item.root[0].urlid = options.url;
+                itemHandler(item.root[0], callback);
             }else{
                 context.logger.error("Failed to load race URL %s on proxy %s. Error: " + error + ", Statut Code: " + response.statusCode, options.url, options.proxy);
                 callback();

@@ -40,7 +40,7 @@ let frameNextPageUrl = {
 
 let scrawler = new BibScrawler();
 
-scrawler.load('logicourse', frameCourses, frameCourse, frameNextPageUrl);
+scrawler.load('fruitetlegume', frameCourses, frameCourse, frameNextPageUrl);
 
 scrawler.parser_site($navInfo, function(item, next){
 	let regex = /\/([a-zA-Z0-9\-_]+)_346_346_filled.jpg$/;

@@ -74,6 +74,131 @@ let scrawler = new BibScrawler();
 scrawler.load('jogging_international', frameCourses, frameCourse, frameNextPageUrl);
 
 scrawler.parser_site($navInfo, function(item, next){
-	console.log(item.title);
+			item.random = Math.floor((Math.random() * 9) + 1);
+		
+			// management des dates
+			let tmpDate = item.date;
+			if(tmpDate.length > 10){
+				item.end_date = tmpDate.substring(19, 23) + '-' + tmpDate.substring(16, 18) + '-' + tmpDate.substring(13, 15);
+			}
+
+			item.start_date = tmpDate.substring(6, 10) + '-' + tmpDate.substring(3, 5) + '-' + tmpDate.substring(0, 2);
+
+			// management de la zone divers
+			let cacheType = 'Standard';
+
+			for(let tmpEpreuve of item._epreuves_){
+				let dataDivers = tmpEpreuve.divers;
+				let indexDepart = dataDivers.indexOf('Départ :');
+				let indexDescription = dataDivers.indexOf('Description :');
+				let indexPrix = dataDivers.indexOf('Prix inscription :');
+				let indexPrixSurPlace = dataDivers.indexOf('Prix inscription sur place :');
+				let indexInscription = dataDivers.indexOf('Nombre arrivants :');
+
+				if(indexDescription != -1){
+					tmpEpreuve.description = dataDivers.substring(indexDescription+14, dataDivers.length);
+					dataDivers = dataDivers.substring(0, indexDescription-1);
+				}
+
+				if(indexInscription != -1){
+					tmpEpreuve.maxinscription = dataDivers.substring(indexInscription+19, dataDivers.length);
+					dataDivers = dataDivers.substring(0, indexInscription-1);
+				}
+
+				tmpEpreuve['prices'] = [];
+
+				if(indexPrixSurPlace != -1){
+					tmpEpreuve.prixplace = dataDivers.substring(indexPrixSurPlace+29, dataDivers.length);
+					let parserString = parsePrixString(tmpEpreuve.prixplace, true);
+					for(let tmpPrice of parserString['prices']){
+						tmpEpreuve['prices'].push(tmpPrice);
+					}
+					dataDivers = dataDivers.substring(0, indexPrixSurPlace-1);
+				}
+
+				if(indexPrix != -1){
+					tmpEpreuve.prix = dataDivers.substring(indexPrix+19, dataDivers.length);
+					let parserString = parsePrixString(tmpEpreuve.prix, false);
+					for(let tmpPrice of parserString['prices']){
+						tmpEpreuve['prices'].push(tmpPrice);
+					}
+					dataDivers = dataDivers.substring(0, indexPrix-1);
+				}
+
+				tmpEpreuve.hour_depart = dataDivers.substring(indexDepart+9, dataDivers.length); // +8 ton skip Départ :
+
+				if(typeof tmpEpreuve.type != 'undefined' && tmpEpreuve.type.indexOf('<span>') == -1){
+					cacheType = tmpEpreuve.type;
+				}else{
+					tmpEpreuve.type = cacheType;
+				}
+
+				// distance: replace , point . to avoid cast exception
+				if(typeof tmpEpreuve.distance != 'undefined' && tmpEpreuve.distance.indexOf(',') != -1){
+					tmpEpreuve.distance = tmpEpreuve.distance.replace(',', '.');
+				} 
+
+				let regexName = /(\w+)\s*\(\d+\)/g;
+				if(typeof tmpEpreuve.name != 'undefined' && tmpEpreuve.name.match(regexName)){
+					tmpEpreuve.name = tmpEpreuve.name.replace(regexName, '$1');
+				}
+
+				tmpEpreuve.divers = null;
+				//console.log(tmpEpreuve);
+			}
+			
+			Epreuve.find({ urlid: options.url }, function(err, findResult) {
+				if (err){
+					logger.error('Unable to find the race. URL %s', options.url, err);
+					callback();
+				}else{
+					if(findResult.length == 0){
+						/// try to find the town
+						Ville.find({ SORT_NAME_RO: item.commune_req, NAME_RANK: '1' }, function(err, findVilleResult) {
+							if (err){
+								logger.error('Unable to find the city. URL %s', options.url, { SORT_NAME_RO: item.commune_req }, err);
+								callback();
+							}else{
+								if(findVilleResult.length == 0){
+									logger.error("La ville %s n'a pas été trouvée dans la base. URL %s", item.commune_req, options.url);
+									callback();
+								}else if(findVilleResult.length > 1){
+									logger.error("La ville %s a été trouvée en plusieurs exemplaires dans la base. URL %s", item.commune_req, options.url);
+									callback();
+								}else{
+									//console.log('lat: ' + findVilleResult[0].LAT + ' long: ' + findVilleResult[0].LONG);
+									item.lat =  findVilleResult[0].LAT;
+									item.long =  findVilleResult[0].LONG;
+
+									for(let tmpEpreuve of item._epreuves_){
+										tmpEpreuve._id = new mongoose.Types.ObjectId();
+										tmpEpreuve.epreuves = [];
+									}
+
+									for(let tmpEpreuve of item._epreuves_){
+										for(let tmp of item._epreuves_){
+											if(!tmp._id.equals(tmpEpreuve._id)){
+												tmpEpreuve.epreuves.push(tmp);
+											}
+										}
+
+										var mEp = new epreuveModel(Object.assign(tmpEpreuve, item));
+										mEp.save(function(err){
+											if (err){
+												logger.error('Unable to save the epreuve.', err);
+											}
+										});
+									}
+									
+									callback();
+								}
+							}
+						});
+					}else{
+						logger.info("Le document %s existe deja", options.url);
+						callback();
+					}
+				}
+			});
 	next();
 });

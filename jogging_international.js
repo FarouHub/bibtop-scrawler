@@ -29,8 +29,8 @@ var $navInfo = [];
 $navInfo['page'] = {};
 $navInfo['page']['rootPage'] = 'http://www.jogging-international.net';
 $navInfo['page']['addRoot'] = true;
-$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=1&q=&date_begin=&date_end=&country_code=FR';
-//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier/page-12?country_code=FR&date_begin=&date_end=&fs=1&q=';
+//$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=11&q=&date_begin=&date_end=&country_code=FR';
+$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier/page-11?country_code=FR&date_begin=&date_end=&fs=1&q=';
 $navInfo['page']['degraded'] = 0;
 $navInfo['proxies'] = config.proxies;
 
