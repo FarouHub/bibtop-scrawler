@@ -15,6 +15,7 @@ var EpreuveSchema = new Schema({
     distance: Number,
     maxinscription : Number,
     title: String,
+    title_req: String,
     start_date: Date,
     end_date: Date,
     region: String,

@@ -15,9 +15,9 @@ console.log('Connect to mongodb: ' + config.mongodb);
 // Info de navigation
 var $navInfo = [];
 $navInfo['page'] = {};
-$navInfo['page']['rootPage'] = 'http://www.jogging-international.net';
+$navInfo['page']['rootPage'] = 'http://klikego.com/';
 $navInfo['page']['addRoot'] = true;
-$navInfo['page']['currentPage'] = 'http://www.jogging-international.net/courses/calendrier?fs=1&q=&date_begin=&date_end=&country_code=FR';
+$navInfo['page']['currentPage'] = 'http://klikego.com/recherche';
 $navInfo['page']['degraded'] = 0;
 $navInfo['proxies'] = config.proxies;
 
@@ -26,9 +26,7 @@ let frameCourses = {
 	"root": {
 		"_s": "article",
 		"_d": [{
-			"name": ".date-result + a @ title",
-			"date": ".date-result",
-			"url": ".date-result + a @ href"
+			"url": "h4 [style=color:#BC0021] @ href"
 		}]
 	}
 };
@@ -36,29 +34,19 @@ let frameCourses = {
 // Recupere les info sur la page de détail
 let frameCourse = {
 	"root": {
-		"_s": "section article",
+		"_s": "#ContentPlaceHolder_Content_UpdatePanel_Calendar_4leftcols",
 		"_d": [{
-			"title": "h1",
-			"title_req": "h1 | no_accent words_no_space uppercase",
-			"date": "[itemprop=articleBody] ul li || : (.*)",
-			"region": "[itemprop=articleBody] ul + ul li || : (.*)",
-			"commune": "[itemprop=articleBody] ul + ul li + li || : (.*) | before(()",
-			"commune_req": "[itemprop=articleBody] ul + ul li + li || : (.*) | before(() | no_accent words_no_space uppercase",
-			"codepostal": "[itemprop=articleBody] ul + ul li + li || : (.*) ",
-			"place_depart": "[itemprop=articleBody] ul + ul li + li + li || : (.*)",
-			"service" : "h2:contains('Services') + ul li:contains('Service') || : (.*)",
-			"recompences" : "h2:contains('Services') + ul li:contains('Récompenses') || : (.*)",
-			"animation" : "h2:contains('Services') + ul li:contains('Animation') || : (.*)",
-			"contact": "h2:contains('Contact') + div li:contains('Contact') || : (.*)",
-			"phone": "h2:contains('Contact') + div li:contains('Tél') || : (.*)",
-			"mail": "h2:contains('Contact') + div li:contains('Email') || : (.*)",
-			"url_club": ".bt-jog @ href",
+			"title": "#ContentPlaceHolder_Content_Label_Event_Name_Title",
+			"title_req": "#ContentPlaceHolder_Content_Label_Event_Name_Title | no_accent words_no_space uppercase",
+			"date": "#ContentPlaceHolder_Content_Label_HTML_Event_Description .icon-calendar + b",
+			"commune": "#ContentPlaceHolder_Content_Label_Event_Place_Title b",
+			"commune_req": "#ContentPlaceHolder_Content_Label_Event_Place_Title b | no_accent words_no_space uppercase",
+			"description" : "p",
+			"type" : "#ContentPlaceHolder_Content_Label_HTML_Event_Description .icon-award + b",
 			"_epreuves_": {
 			"_s": ".jog-data-tab tr",
-			"_d": [{"name": "span || - (.*)",
-					"distance": "span || ([\\d,\\.]+)",
-					"type": "th < html | after(span>)",
-					"divers": "ul"
+			"_d": [{
+					"distance": "span || ([\\d,\\.]+)"
 					}]
 			}
 		}]
